@@ -1,0 +1,26 @@
+{
+  "name": "tech-store",
+  "version": "1.0.0",
+  "description": "Ecommerce website",
+  "default": "index.html",
+  "scripts": {
+    "start": "parcel frontend/src/index.html frontend/src/admin.html frontend/src/signup.html frontend/src/signin.html",
+    "build": "parcel build frontend/src/index.html frontend/src/admin.html frontend/src/signup.html frontend/src/signin.html --dist-dir build",
+    "build:tailwind": "tailwindcss -i ./frontend/src/client/styles/style.css -o ./frontend/src/admin/styles/output.css --watch"
+  },
+  "author": "Mohamed Mouloudj",
+  "license": "ISC",
+  "dependencies": {
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15",
+    "crypto-js": "^4.2.0",
+    "tech-store": "file:"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "parcel": "^2.10.0",
+    "postcss": "^8.4.49",
+    "svgo": "^3.3.2",
+    "tailwindcss": "^3.4.17"
+  }
+}

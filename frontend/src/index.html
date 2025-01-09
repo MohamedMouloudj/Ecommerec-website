@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="shortcut icon"
+      href="./images/ecommerce-logo.png"
+      type="image/x-icon"
+    />
+    <link rel="stylesheet" href="./client/styles/output.css" />
+    <script type="module" src="./client/scripts/controller.js"></script>
+
+    <title>Tech store</title>
+  </head>
+  <body>
+    <form class="search">
+      <div class="w-max">
+        <img
+          src="./images/ecommerce-logo.png"
+          alt="logo"
+          class="w-[80px] h-[80px] object-cover"
+        />
+      </div>
+      <div class="flex justify-center items-center gap-4">
+        <input
+          class="placeholder:text-var(--border-color) w-[25rem] bg-[rgba(var(--background-color))] text-[var(--text-color)] border border-[var(--border-color)] rounded-lg search__input"
+          type="text"
+          placeholder="Search for a product..."
+        />
+        <span class="search__clear hidden">&times;</span>
+      </div>
+      <div id="navbar-actions" class="flex gap-3 items-center">
+        <span id="dark-mode-toggle" class="p-2">
+          <img
+            src="./images/dark_mode.svg"
+            alt="dark mode"
+            class="w-[24px] h-[24px]"
+          />
+        </span>
+        <div class="cart__button--open">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="feather feather-shopping-cart"
+          >
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path
+              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+            ></path>
+          </svg>
+        </div>
+        <a
+          id="navbar-actions--signup"
+          class="ml-4 border border-primary-900 p-2 rounded-md text-base text-primary-900 flex items-center cursor-pointer"
+          role="button"
+          href="./signup.html"
+        >
+          Sign Up
+        </a>
+        <a
+          id="navbar-actions--signin"
+          class="bg-primary-900 p-2 rounded-md text-base text-[var(--background-color)] flex items-center cursor-pointer"
+          role="button"
+          href="./signin.html"
+        >
+          Sign In
+        </a>
+      </div>
+    </form>
+    <section class="ad-container">
+      <div class="ad">
+        <h1 class="ad__title">Welcome to our store</h1>
+        <p class="ad__description">
+          We have the <span>best tech products</span> at the best prices
+        </p>
+        <button
+          id="ad__button"
+          class="p-4 bg-primary-900 text-[var(--background-color)] border-none rounded-md cursor-pointer text-base text-center w-fit outline-none shadow-md hover:bg-primary-700 hover:shadow-light dark:hover:shadow-light duration-300 animate-bounce-slow"
+        >
+          Shop now
+        </button>
+      </div>
+    </section>
+    <div class="app-container">
+      <section class="options">
+        <div class="options__filters">
+          <button class="options__filters--open">Filters</button>
+          <div class="options__filters--container hidden">
+            <form action="">
+              <div class="filters__price-range">
+                <label> Set price range: </label>
+                <input type="number" name="lowerBound" min="0" />
+                <span>to</span>
+                <input type="number" name="upperBound" min="0" />
+              </div>
+              <div class="filters__category">
+                <label for="category"> Category: </label>
+                <select name="category" id="category"></select>
+              </div>
+              <div class="actions">
+                <button type="submit">Apply</button>
+                <button type="reset" class="fliters__clear">Clear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <span class="options__view-types">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="feather feather-columns"
+          >
+            <path
+              d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"
+            ></path>
+          </svg>
+        </span>
+      </section>
+      <main class="products__view products__view--list"></main>
+    </div>
+    <section class="cart hidden">
+      <div class="cart__container">
+        <div class="cart__header">
+          <h2 class="cart__title">Cart</h2>
+          <span class="cart__button--close">&times;</span>
+        </div>
+        <ul class="cart__items"></ul>
+        <div class="cart__footer">
+          <div class="cart__total">
+            <span>Total:</span>
+            <span class="cart__total--price">$0.00</span>
+          </div>
+          <button class="cart__checkout">Checkout</button>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
