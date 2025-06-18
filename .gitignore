@@ -19,3 +19,10 @@ node_modules/
 Thumbs.db
 
 *.db
+.parcel-cache
+
+*-lock.json
+.lock
+# Ignore build directories
+dist/
+build/
