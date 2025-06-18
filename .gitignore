@@ -17,3 +17,5 @@ node_modules/
 # Ignore OS generated files
 .DS_Store
 Thumbs.db
+
+*.db
