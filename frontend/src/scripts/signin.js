@@ -1,5 +1,5 @@
-import { PRODUCTS_BASE_API_URL } from "./services/config";
-import showMessage from "./utils/message";
+import { BASE_API_URL } from "./services/config";
+import showMessage from "./ui/message";
 
 const form = document.querySelector("form");
 
@@ -10,7 +10,7 @@ form.addEventListener("submit", async (e) => {
   const client = Object.fromEntries(formData.entries());
 
   try {
-    const response = await fetch(`${PRODUCTS_BASE_API_URL}/login`, {
+    const response = await fetch(`${BASE_API_URL}/login`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -25,7 +25,7 @@ form.addEventListener("submit", async (e) => {
     }
     showMessage(data.message, 0);
     setTimeout(() => {
-      window.location.href = data.redirectPath;
+      window.location.href = data.redirect || "/";
     }, 3000);
   } catch (error) {
     showMessage("Incorrect email or password", 1);

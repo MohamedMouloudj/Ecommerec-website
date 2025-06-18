@@ -2,7 +2,7 @@ import View from "./View";
 
 class User extends View {
   constructor() {
-    super(document.querySelector("body"));
+    super(document.querySelector(".profile__items"));
   }
   _generateMarkup() {
     return `
@@ -53,3 +53,5 @@ class User extends View {
     `;
   }
 }
+
+export default new User();

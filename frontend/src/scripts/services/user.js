@@ -1,4 +1,4 @@
-import { PRODUCTS_BASE_API_URL as API_BASE_URL } from "./config.js";
+import { BASE_API_URL as API_BASE_URL } from "./config.js";
 
 export async function fetchUserInfo() {
   try {

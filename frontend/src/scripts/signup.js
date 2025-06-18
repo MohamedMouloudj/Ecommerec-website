@@ -1,5 +1,5 @@
-import { PRODUCTS_BASE_API_URL } from "./services/config";
-import showMessage from "./utils/message";
+import { BASE_API_URL } from "./services/config";
+import showMessage from "./ui/message";
 
 const form = document.querySelector("form");
 form.addEventListener("submit", async (e) => {
@@ -19,7 +19,7 @@ form.addEventListener("submit", async (e) => {
   };
   client.secret ? (data.secret = client.secret) : null;
   try {
-    const response = await fetch(PRODUCTS_BASE_API_URL + "/signup", {
+    const response = await fetch(BASE_API_URL + "/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -29,6 +29,8 @@ form.addEventListener("submit", async (e) => {
     const dataResponse = await response.json();
     if (response.status !== 200) throw new Error(dataResponse.error);
     showMessage(dataResponse.message, 0);
+    console.log(dataResponse);
+
     setTimeout(() => {
       window.location.href = "/signin";
     }, 2000);

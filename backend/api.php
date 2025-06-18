@@ -123,9 +123,7 @@ if ($path[0] === 'categories') {
     }
 } elseif ($path[0] === 'cart') {
 
-    if (empty($_SESSION['cart'] || empty($_SESSION['client']) || empty($_SESSION['client']['id']))) {
-        sendResponse(["error" => "You must be signed in to add items to the cart"], 401);
-    }
+    validateAuth();
 
     $clientId = $_SESSION['client']['id'];
     $cart['id'] = $_SESSION['cart']['id'];
@@ -312,10 +310,9 @@ if ($path[0] === 'categories') {
         // Set session cookie with SameSite=None and Secure attributes explicitly (FINALLY!!)
         header('Set-Cookie: ' . session_name() . '=' . session_id() . '; SameSite=None; Secure; HttpOnly');
 
-        // Redirect the user
-        header("Location: {$redirectPath}");
         sendResponse([
             "message" => "Login successful",
+            "redirect" => $redirectPath,
         ], 200);
     }
 } elseif ($path[0] === 'logout') {
@@ -343,6 +340,344 @@ if ($path[0] === 'categories') {
         "phone" => $_SESSION['client']['phone'],
         "address" => $_SESSION['client']['address'],
     ], 200);
+} elseif ($path[0] === 'profile') {
+    // Check authentication for all profile endpoints
+    if (empty($_SESSION['client']) || empty($_SESSION['client']['id'])) {
+        sendResponse(["error" => "You must be signed in to access this resource"], 401);
+    }
+
+    if ($requestMethod === 'GET') {
+        // GET /profile
+        sendResponse([
+            "id" => $_SESSION['client']['id'],
+            "name" => $_SESSION['client']['name'],
+            "email" => $_SESSION['client']['email'],
+            "isAdmin" => $_SESSION['client']['isAdmin'],
+            "phone" => $_SESSION['client']['phone'],
+            "address" => $_SESSION['client']['address'],
+        ], 200);
+    } elseif ($requestMethod === 'PUT') {
+        // PUT /profile - Update profile
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (empty($input)) {
+            sendResponse(["error" => "No data provided"], 400);
+        }
+
+        $allowedFields = ['name', 'phone', 'address'];
+        $updateFields = [];
+        $updateValues = [];
+
+        foreach ($allowedFields as $field) {
+            if (isset($input[$field])) {
+                $updateFields[] = "$field = :$field";
+                $updateValues[$field] = $input[$field];
+            }
+        }
+
+        if (empty($updateFields)) {
+            sendResponse(["error" => "No valid fields to update"], 400);
+        }
+
+        $updateValues['id'] = $_SESSION['client']['id'];
+
+        try {
+            $statement = $pdo->prepare('UPDATE client SET ' . implode(', ', $updateFields) . ' WHERE id = :id');
+            $statement->execute($updateValues);
+
+            // Update session data
+            foreach ($allowedFields as $field) {
+                if (isset($input[$field])) {
+                    $_SESSION['client'][$field] = $input[$field];
+                }
+            }
+
+            sendResponse([
+                "message" => "Profile updated successfully",
+                "profile" => [
+                    "id" => $_SESSION['client']['id'],
+                    "name" => $_SESSION['client']['name'],
+                    "email" => $_SESSION['client']['email'],
+                    "isAdmin" => $_SESSION['client']['isAdmin'],
+                    "phone" => $_SESSION['client']['phone'],
+                    "address" => $_SESSION['client']['address'],
+                ]
+            ], 200);
+        } catch (Exception $e) {
+            sendResponse(["error" => "Failed to update profile: " . $e->getMessage()], 500);
+        }
+    } elseif ($requestMethod === 'POST' && isset($path[1]) && $path[1] === 'password') {
+        // POST /profile/password - Change password
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (empty($input['currentPassword']) || empty($input['newPassword'])) {
+            sendResponse(["error" => "Current password and new password are required"], 400);
+        }
+
+        // Verify current password
+        $statement = $pdo->prepare('SELECT password FROM client WHERE id = :id');
+        $statement->execute(['id' => $_SESSION['client']['id']]);
+        $user = $statement->fetch();
+
+        if (!password_verify($input['currentPassword'], $user['password'])) {
+            sendResponse(["error" => "Current password is incorrect"], 400);
+        }
+
+        // Update password
+        $hashedPassword = password_hash($input['newPassword'], PASSWORD_ARGON2ID);
+        $statement = $pdo->prepare('UPDATE client SET password = :password WHERE id = :id');
+        $statement->execute([
+            'password' => $hashedPassword,
+            'id' => $_SESSION['client']['id']
+        ]);
+
+        sendResponse(["message" => "Password updated successfully"], 200);
+    }
+} elseif ($path[0] === 'orders') {
+
+    validateAuth();
+
+    $clientId = $_SESSION['client']['id'];
+
+    if ($requestMethod === 'GET') {
+        if (isset($path[1])) {
+            // GET /orders/{id} - Get specific order
+            $orderId = (int)$path[1];
+
+            // Check if order belongs to the authenticated user (or is admin)
+            $statement = $pdo->prepare('SELECT * FROM orders WHERE id = :orderId AND clientId = :clientId');
+            $statement->execute(['orderId' => $orderId, 'clientId' => $clientId]);
+            $order = $statement->fetch();
+
+            if (!$order) {
+                sendResponse(["error" => "Order not found"], 404);
+            }
+
+            // Get order items with product details
+            $statement = $pdo->prepare('
+                SELECT oi.*, p.name, p.brand, pi.url as thumbnail 
+                FROM orderitem oi 
+                INNER JOIN product p ON oi.productId = p.id 
+                LEFT JOIN productimage pi ON p.id = pi.productId AND pi.isThumbnail = 1
+                WHERE oi.orderId = :orderId
+            ');
+            $statement->execute(['orderId' => $orderId]);
+            $orderItems = $statement->fetchAll();
+
+            $order['items'] = $orderItems;
+            sendResponse($order);
+        } else {
+            // GET /orders - Get all orders for authenticated user
+            $statement = $pdo->prepare('SELECT * FROM orders WHERE clientId = :clientId ORDER BY orderDate DESC');
+            $statement->execute(['clientId' => $clientId]);
+            $orders = $statement->fetchAll();
+
+            // Get order items for each order
+            foreach ($orders as &$order) {
+                $statement = $pdo->prepare('
+                    SELECT oi.*, p.name, p.brand, pi.url as thumbnail 
+                    FROM orderitem oi 
+                    INNER JOIN product p ON oi.productId = p.id 
+                    LEFT JOIN productimage pi ON p.id = pi.productId AND pi.isThumbnail = 1
+                    WHERE oi.orderId = :orderId
+                ');
+                $statement->execute(['orderId' => $order['id']]);
+                $order['items'] = $statement->fetchAll();
+            }
+
+            sendResponse($orders);
+        }
+    } elseif ($requestMethod === 'POST') {
+        // POST /orders - Create new order from cart
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        // Get user's active cart
+        $statement = $pdo->prepare('SELECT * FROM cart WHERE clientId = :clientId AND status = "active"');
+        $statement->execute(['clientId' => $clientId]);
+        $cart = $statement->fetch();
+
+        if (!$cart) {
+            sendResponse(["error" => "No active cart found"], 400);
+        }
+
+        // Get cart items
+        $statement = $pdo->prepare('
+            SELECT ci.*, p.price, p.stock, p.name 
+            FROM cartitem ci 
+            INNER JOIN product p ON ci.productId = p.id 
+            WHERE ci.cartId = :cartId
+        ');
+        $statement->execute(['cartId' => $cart['id']]);
+        $cartItems = $statement->fetchAll();
+
+        if (empty($cartItems)) {
+            sendResponse(["error" => "Cart is empty"], 400);
+        }
+
+        // Calculate total amount and check stock
+        $totalAmount = 0;
+        foreach ($cartItems as $item) {
+            if ($item['quantity'] > $item['stock']) {
+                sendResponse(["error" => "Insufficient stock for " . $item['name']], 400);
+            }
+            $totalAmount += ($item['price'] * $item['quantity']);
+        }
+
+        // Apply any discount if provided
+        if (isset($input['discountPercent']) && $input['discountPercent'] > 0) {
+            $totalAmount = $totalAmount * (1 - $input['discountPercent'] / 100);
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            // Create order
+            $statement = $pdo->prepare('
+                INSERT INTO orders (clientId, orderDate, totalAmount, status) 
+                VALUES (:clientId, :orderDate, :totalAmount, :status)
+            ');
+            $statement->execute([
+                'clientId' => $clientId,
+                'orderDate' => date('Y-m-d H:i:s'),
+                'totalAmount' => $totalAmount,
+                'status' => 'pending'
+            ]);
+
+            $orderId = $pdo->lastInsertId();
+
+            // Create order items and update product stock
+            foreach ($cartItems as $item) {
+                // Insert order item
+                $statement = $pdo->prepare('
+                    INSERT INTO orderitem (productId, orderId, quantity, price) 
+                    VALUES (:productId, :orderId, :quantity, :price)
+                ');
+                $statement->execute([
+                    'productId' => $item['productId'],
+                    'orderId' => $orderId,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price']
+                ]);
+
+                // Update product stock
+                $statement = $pdo->prepare('
+                    UPDATE product 
+                    SET stock = stock - :quantity 
+                    WHERE id = :productId
+                ');
+                $statement->execute([
+                    'quantity' => $item['quantity'],
+                    'productId' => $item['productId']
+                ]);
+            }
+
+            // Clear cart
+            $statement = $pdo->prepare('DELETE FROM cartitem WHERE cartId = :cartId');
+            $statement->execute(['cartId' => $cart['id']]);
+
+            // Update cart status
+            $statement = $pdo->prepare('
+                UPDATE cart 
+                SET status = "completed", checkoutDate = :checkoutDate 
+                WHERE id = :cartId
+            ');
+            $statement->execute([
+                'checkoutDate' => date('Y-m-d H:i:s'),
+                'cartId' => $cart['id']
+            ]);
+
+            // Create new active cart for user
+            $statement = $pdo->prepare('INSERT INTO cart (status, clientId) VALUES ("active", :clientId)');
+            $statement->execute(['clientId' => $clientId]);
+            $newCartId = $pdo->lastInsertId();
+
+            // Update session with new cart
+            $_SESSION['cart']['id'] = $newCartId;
+
+            $pdo->commit();
+
+            sendResponse([
+                "message" => "Order created successfully",
+                "orderId" => $orderId,
+                "totalAmount" => $totalAmount
+            ], 201);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            sendResponse(["error" => "Failed to create order: " . $e->getMessage()], 500);
+        }
+    } elseif ($requestMethod === 'PUT') {
+        // PUT /orders/{id} - Cancel order
+        if (!isset($path[1])) {
+            sendResponse(["error" => "Order ID required"], 400);
+        }
+
+        $orderId = (int)$path[1];
+
+        // Get order details
+        $statement = $pdo->prepare('SELECT * FROM orders WHERE id = :orderId AND clientId = :clientId');
+        $statement->execute(['orderId' => $orderId, 'clientId' => $clientId]);
+        $order = $statement->fetch();
+
+        if (!$order) {
+            sendResponse(["error" => "Order not found"], 404);
+        }
+
+        if ($order['status'] === 'cancelled') {
+            sendResponse(["error" => "Order is already cancelled"], 400);
+        }
+
+        if ($order['status'] === 'completed' || $order['status'] === 'shipped') {
+            sendResponse(["error" => "Cannot cancel order with status: " . $order['status']], 400);
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            // Get order items to restore stock
+            $statement = $pdo->prepare('SELECT * FROM orderitem WHERE orderId = :orderId');
+            $statement->execute(['orderId' => $orderId]);
+            $orderItems = $statement->fetchAll();
+
+            // Restore product stock
+            foreach ($orderItems as $item) {
+                $statement = $pdo->prepare('
+                    UPDATE product 
+                    SET stock = stock + :quantity 
+                    WHERE id = :productId
+                ');
+                $statement->execute([
+                    'quantity' => $item['quantity'],
+                    'productId' => $item['productId']
+                ]);
+            }
+
+            // Update order status
+            $statement = $pdo->prepare('UPDATE orders SET status = "cancelled" WHERE id = :orderId');
+            $statement->execute(['orderId' => $orderId]);
+
+            $pdo->commit();
+
+            sendResponse(["message" => "Order cancelled successfully"]);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            sendResponse(["error" => "Failed to cancel order: " . $e->getMessage()], 500);
+        }
+    }
 } else {
     sendResponse(["error" => "Not found"], 404);
+}
+
+
+/**
+ * Validates if the user is authenticated.
+ * If $requireAuth is true, it checks if the user is logged in.
+ * If not logged in, it sends a 401 Unauthorized response.
+ *
+ * @param bool $requireAuth Whether authentication is required
+ */
+function validateAuth($requireAuth = true)
+{
+    if ($requireAuth && (empty($_SESSION['client']) || empty($_SESSION['client']['id']))) {
+        sendResponse(["error" => "You must be signed in to access this resource"], 401);
+    }
 }

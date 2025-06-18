@@ -87,7 +87,7 @@
     border-radius: 0 0 0.5rem 0.5rem;
     padding: 0.5rem;
     height: 6rem;
-    z-index: 100000;
+    z-index: 500;
 
     color: var(--text-color);
   }
@@ -714,4 +714,9 @@
     width: fit-content;
     outline: none;
   }
+}
+
+#profile-container {
+  color: var(--text-color);
+  background-color: var(--background-color);
 }

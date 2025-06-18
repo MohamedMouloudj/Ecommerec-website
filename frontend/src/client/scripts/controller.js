@@ -1,14 +1,15 @@
-import * as model from "./model";
+import * as model from "../../model";
 import searchView from "./views/SearchView";
 import resultView from "./views/ResultView";
 import filtersView from "./views/FiltersView";
 import productView from "./views/ProductView";
 import cartView from "./views/CartView";
+import profile from "./views/User";
 import {
   getDarkModePreference,
   setDarkModePreference,
 } from "../../scripts/services/preferences";
-import showMessage from "../../scripts/utils/message";
+import showMessage from "../../scripts/ui/message";
 
 const controleSearch = () => {
   const query = searchView.getQuery();
@@ -207,30 +208,30 @@ function smoothScroll(target, duration) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  controleCategories();
-  if (getDarkModePreference()) {
-    toggleDarkMode();
+  try {
+    controleCategories();
+    if (getDarkModePreference()) {
+      toggleDarkMode();
+    }
+    await model.setUser();
+    if (!model.state.user.email) return;
+    cartView.render(model.state.cart);
+    cartView.calculateTotal(model.state.cart);
+    assignProductPage();
+    const signinButton = document.querySelector("#navbar-actions--signin");
+    const signupButton = document.querySelector("#navbar-actions--signup");
+    signinButton.remove();
+    signupButton.remove();
+    const profileBtn = document.querySelector("#navbar-actions--profile");
+    const profileActions = document.querySelector("#profile-container");
+    profileBtn.classList.remove("hidden");
+    profileBtn.addEventListener("click", () => {
+      profileActions.classList.toggle("hidden");
+    });
+    profile.render(model.state.user);
+  } catch (error) {
+    showMessage("Please Sign in", 1);
   }
-  await model.setUser();
-  if (!model.state.user.email) return;
-  cartView.render(model.state.cart);
-  cartView.calculateTotal(model.state.cart);
-  assignProductPage();
-  const signinButton = document.querySelector("#navbar-actions--signin");
-  const signupButton = document.querySelector("#navbar-actions--signup");
-  signinButton.remove();
-  signupButton.remove();
-
-  const userButton = document.createElement("a");
-  userButton.href = "/profile";
-  const markup = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="var(--text-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22" stroke="var(--text-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`;
-  userButton.insertAdjacentHTML("afterbegin", markup);
-  document
-    .querySelector("#navbar-actions")
-    .insertAdjacentHTML("afterbegin", userButton.outerHTML);
 });
 
 function toggleDarkMode() {

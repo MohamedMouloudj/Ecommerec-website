@@ -31,6 +31,50 @@
         <span class="search__clear hidden">&times;</span>
       </div>
       <div id="navbar-actions" class="flex gap-3 items-center">
+        <div
+          class="relative hidden"
+          id="navbar-actions--profile"
+        >
+          <svg
+          class="cursor-pointer"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+              stroke="var(--text-color)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22"
+              stroke="var(--text-color)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <div id="profile-container" class="absolute z-1000 top-4 right-0 w-max rounded-md flex flex-col gap-6 p-3 items-center shadow-md bg-neutral-200 dark:bg-neutral-800 hidden">
+            <button id="profile-container__profile" type="button" class="text-sm text-neutral-500 p-1w-full">
+              Profile
+            </button>
+            <div class="border-b border-neutral-300 w-full h-2 flex justify-center">-----</div>
+            <button id="profile-container__logout" type="button" class="text-sm text-neutral-500 p-1 flex items-center gap-2 w-full">
+              <span>
+                Logout
+              </span>
+              <img
+                src="./images/logout.svg"
+                alt="logout"
+                class="w-[16px] h-[16px]"
+              />
+            </button>
+          </div>
+        </div>
         <span id="dark-mode-toggle" class="p-2">
           <img
             src="./images/dark_mode.svg"
@@ -148,6 +192,14 @@
           <button class="cart__checkout">Checkout</button>
         </div>
       </div>
+    </section>
+    <section class="profile hidden">
+      <div class="profile__container">
+        <div class="profile__header">
+          <h2 class="profile__title">profile</h2>
+          <span class="profile__button--close">&times;</span>
+        </div>
+        <ul class="profile__items"></ul>
     </section>
   </body>
 </html>

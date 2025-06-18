@@ -1,15 +1,20 @@
 <?php
-require_once '../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+
+static $pdo = null;
+static $initialized = false;
+
+if ($pdo !== null) {
+    return $pdo;
+}
+
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $env = $dotenv->load();
 
-$host = $env['DB_HOST'];
-$port = $env['DB_PORT'];
-$dbname = $env['DB_NAME'];
-$username = $env['DB_USER'];
-$password = $env['DB_PASSWORD'];
+// SQLite database path
+$dbPath = __DIR__ . '/ecommerce.db';
 
-$dsn = "mysql:host=$host;port=$port;dbname=$dbname";
+$dsn = "sqlite:$dbPath";
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -17,7 +22,27 @@ $options = [
 ];
 
 try {
-    $pdo = new PDO($dsn, $username, $password, $options);
+    $pdo = new PDO($dsn, null, null, $options);
+
+    // Enable foreign key constraints for SQLite
+    $pdo->exec('PRAGMA foreign_keys = ON');
+
+    // Only initialize once
+    if (!$initialized) {
+        // Check if database is empty and needs initialization
+        $stmt = $pdo->query("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'");
+        $result = $stmt->fetch();
+
+        if ($result['count'] == 0) {
+            // Database is empty, create tables and insert sample data
+            $schemaFile = __DIR__ . '/../schema.sql';
+            if (file_exists($schemaFile)) {
+                $schema = file_get_contents($schemaFile);
+                $pdo->exec($schema);
+            }
+        }
+        $initialized = true;
+    }
 } catch (\PDOException $e) {
     throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }

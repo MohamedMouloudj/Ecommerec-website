@@ -1,4 +1,4 @@
-import { PRODUCTS_BASE_API_URL, TIMEOUT_SECONDS } from "./config.js";
+import { BASE_API_URL, TIMEOUT_SECONDS } from "./config.js";
 
 const timeout = function (s) {
   return new Promise(function (_, reject) {
@@ -14,7 +14,7 @@ const timeout = function (s) {
 
 export async function getCategories() {
   try {
-    const response = await fetch(PRODUCTS_BASE_API_URL + "/categories");
+    const response = await fetch(BASE_API_URL + "/categories");
     const data = await response.json();
     if (response.status !== 200) throw new Error(data.error);
     return data;
@@ -25,7 +25,7 @@ export async function getCategories() {
 
 export async function getProducts() {
   try {
-    const response = await fetch(PRODUCTS_BASE_API_URL + "/products");
+    const response = await fetch(BASE_API_URL + "/products");
     const data = await response.json();
     if (response.status !== 200) throw new Error(data.error);
     return data;
@@ -37,7 +37,7 @@ export async function getProducts() {
 export async function getProductById(id) {
   try {
     const response = await Promise.race([
-      fetch(PRODUCTS_BASE_API_URL + "/products/" + id),
+      fetch(BASE_API_URL + "/products/" + id),
       timeout(TIMEOUT_SECONDS),
     ]);
     const data = await response.json();
@@ -51,7 +51,7 @@ export async function getProductById(id) {
 
 export async function postProduct(product) {
   try {
-    const response = await fetch(PRODUCTS_BASE_API_URL + "/products", {
+    const response = await fetch(BASE_API_URL + "/products", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -68,16 +68,13 @@ export async function postProduct(product) {
 
 export async function putProduct(product) {
   try {
-    const response = await fetch(
-      PRODUCTS_BASE_API_URL + "/products/" + product.id,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(product),
-      }
-    );
+    const response = await fetch(BASE_API_URL + "/products/" + product.id, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(product),
+    });
     const data = await response.json();
     if (response.status !== 200) throw new Error(data);
     return data;
@@ -88,7 +85,7 @@ export async function putProduct(product) {
 
 export async function deleteProduct(id) {
   try {
-    const response = await fetch(PRODUCTS_BASE_API_URL + "/products/" + id, {
+    const response = await fetch(BASE_API_URL + "/products/" + id, {
       method: "DELETE",
     });
     const data = await response.json();
@@ -111,7 +108,7 @@ function isClientSignedIn() {
  */
 export function getCart() {
   try {
-    const response = fetch(PRODUCTS_BASE_API_URL + "/cart");
+    const response = fetch(BASE_API_URL + "/cart");
     const data = response.json();
     if (response.status !== 200) throw new Error(response);
     return data;
@@ -122,7 +119,7 @@ export function getCart() {
 
 export function addToCart(id) {
   try {
-    const response = fetch(PRODUCTS_BASE_API_URL + "/cart/" + id, {
+    const response = fetch(BASE_API_URL + "/cart/" + id, {
       method: "POST",
     });
     const data = response.json();
